@@ -938,8 +938,8 @@ class MutableMapping(Mapping, collections.abc.MutableMapping):
             self.as_dict[updated] = self[key]
             del self[key]
 
-    def group(self, name: str, *keys: str):
-        """View or create a group of aliased items.
+    def label(self, name: str, *keys: str):
+        """View or create a label for a group of aliased items.
         
         Parameters
         ----------
