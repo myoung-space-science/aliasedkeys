@@ -976,8 +976,9 @@ class MutableMapping(Mapping, collections.abc.MutableMapping):
         """
         if not groups:
             return Mapping(self)
+        aliased = {k: v for k, v in self.items(aliased=True)}
         grouped = {k: self[k] for k in self._groups}
-        return Mapping({**self, **grouped})
+        return Mapping({**aliased, **grouped})
 
 
 class NameMap(collections.abc.Mapping):
