@@ -937,8 +937,8 @@ class MutableMapping(Mapping, collections.abc.MutableMapping):
             self.as_dict[updated] = self[key]
             del self[key]
 
-    def group(self, name: str, *keys: str):
-        """View or create a groups of aliased items.
+    def superkey(self, name: str, *keys: str):
+        """View or create a group of aliased items.
         
         Parameters
         ----------
@@ -949,53 +949,23 @@ class MutableMapping(Mapping, collections.abc.MutableMapping):
             Zero or more existing keys to associate with `name`. If there are no
             keys and there is an existing group for `name` , this method will
             return the keys in that group.
-
-        Examples
-        --------
-        Create a simple instance of this class:
-
-        >>> base = {'a': 1, 'b': 2, 'c': 3}
-        >>> mapping = aliased.MutableMapping(base)
-
-        The keys are the same as for a ``dict``:
-
-        >>> sorted(mapping)
-        ['a', 'b', 'c']
-
-        Create a new group:
-
-        >>> mapping.group('G', 'a', 'b')
-
-        The mapping keys do not change:
-
-        >>> sorted(mapping)
-        ['a', 'b', 'c']
-
-        Accessing the group key returns the associated values:
-
-        >>> tuple(mapping['G'])
-        (1, 2)
-
-        You can check the original keys associated with the group key:
-
-        >>> mapping.group('G')
-        ('a', 'b')
-
-        Attempting to access an unknown group key raises ``KeyError``:
-
-        >>> mapping.group('H')
-        Traceback (most recent call last):
-        ...
-        KeyError: "No key group called 'H'"
         """
         if name in self:
-            raise ValueError(
-                f"Cannot assign group to existing key {name!r}"
-            ) from None
+            raise ValueError(f"{name!r} is an existing key") from None
         if not keys:
             if name not in self._groups:
-                raise KeyError(f"No key group called {name!r}") from None
-            return self._groups[name]
+                raise KeyError(f"No values assigned to {name!r}") from None
+            allkeys = [
+                k
+                for key in self._groups[name]
+                for k in self.alias(key, include=True)
+            ]
+            return tuple(allkeys)
+        for key in keys:
+            if key not in self:
+                raise KeyError(
+                    f"Cannot assign value of {key!r} to {name!r}"
+                ) from KeyError(key)
         self._groups[name] = keys
 
     def freeze(self, groups: bool=False):
