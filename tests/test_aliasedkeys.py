@@ -455,8 +455,12 @@ def test_mapping_squeeze():
         'c': 'Chrunk',
     }
     assert squeezed.flat == expected
-    with pytest.raises(TypeError):
+    with pytest.raises(aliasedkeys.ValuesTypeError):
         mapping.copy().squeeze(strict=True)
+    invalid = aliasedkeys.Mapping({'a': {'name': 'Annabez'}, 'b': 1})
+    with pytest.raises(aliasedkeys.ValuesTypeError):
+        invalid.squeeze()
+
 
 
 def test_mapping_fromkeys():
