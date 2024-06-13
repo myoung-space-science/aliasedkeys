@@ -162,7 +162,7 @@ class Sets(collections.abc.MutableSet, typing.Generic[_KT]):
                     these.remove(found)
                     these.append(found | group)
                 else:
-                    these.append(group)
+                    these.append(Set(group))
         return these
 
     def _search(self, group: typing.Iterable[_KT]):
