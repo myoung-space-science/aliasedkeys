@@ -934,7 +934,7 @@ class MutableMapping(Mapping, collections.abc.MutableMapping):
             self.as_dict[updated] = self[key]
             del self[key]
 
-    def superkey(self, name: str, *keys: str):
+    def group(self, name: str, *keys: str):
         """View or create a group of aliased items.
         
         Parameters
