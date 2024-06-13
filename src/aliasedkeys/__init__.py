@@ -689,17 +689,20 @@ class Mapping(collections.abc.Mapping, typing.Generic[_KT, _VT]):
             interior mappings with different keys.
         """
         interior = tuple(self.as_dict.values())
+        if not all(isinstance(m, typing.Mapping) for m in interior):
+            raise ValuesTypeError(
+                "Cannot squeeze aliased mapping with non-mapping values."
+            ) from None
         if all(len(mapping) == 1 for mapping in interior):
             if strict:
-                errmsg = (
-                    "Can't squeeze interior mappings with different keys"
-                    " when strict == True"
-                )
                 k0 = tuple(interior[0].keys())[0]
                 for mapping in interior[1:]:
                     k = tuple(mapping.keys())[0]
                     if k != k0:
-                        raise TypeError(errmsg) from None
+                        raise ValuesTypeError(
+                            "Cannot squeeze interior mappings"
+                            " with different keys when strict == True"
+                        ) from None
             new = {
                 k: tuple(v.values())[0] for k, v in self.as_dict.items()
             }
