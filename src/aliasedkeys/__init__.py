@@ -57,10 +57,14 @@ class Set(collections.abc.Set, typing.Generic[_KT]):
         return hash(tuple(self._aliases))
 
     def __bool__(self) -> bool:
-        """Called for bool(self)."""
-        # NOTE: The truth value of a Group is equal to whether or not it has at
-        # least one alias. Since it is currently not possible to instantiate a
-        # Group with zero aliases, this should always return True.
+        """Called for bool(self).
+        
+        Notes
+        -----
+        The truth value of a Set is equal to whether or not it has at least one
+        alias. Since it is not possible to instantiate a Set with zero aliases,
+        this method will always return True.
+        """
         return bool(self._aliases)
 
     def _implement(operator):
