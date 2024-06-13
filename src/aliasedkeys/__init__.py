@@ -922,12 +922,16 @@ class MutableMapping(Mapping, collections.abc.MutableMapping):
             return super().alias(key, include=include)
         for alias in (a for a in aliases if a != key):
             if alias in self._flat_keys():
-                current = super().alias(key)
+                current = super().alias(alias)
                 this = ", ".join(str(a) for a in current)
+                if len(current) == 0:
+                    raise KeyError(
+                        f"{alias!r} is an existing key"
+                    ) from None
                 if len(current) > 1:
                     this = f'({this})'
                 raise KeyError(
-                    f"'{key}' is already an alias for {this!r}"
+                    f"{alias!r} is already an alias for {this!r}"
                 ) from None
             updated = self._resolve(key) | alias
             self.as_dict[updated] = self[key]
