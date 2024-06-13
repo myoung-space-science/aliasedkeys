@@ -803,9 +803,7 @@ class Mapping(collections.abc.Mapping, typing.Generic[_KT, _VT]):
 
     def __repr__(self) -> str:
         """An unambiguous representation of this object."""
-        module = f"{self.__module__.replace('eprempy.', '')}."
-        name = self.__class__.__qualname__
-        return f"{module}{name}({self})"
+        return f"{self.__class__.__qualname__}({self})"
 
     def keys(self, aliased: bool=False):
         """A view on this instance's keys."""
