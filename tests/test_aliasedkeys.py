@@ -319,20 +319,20 @@ def test_mutable_mapping():
         mixed.alias('this', 'that')
 
 
-def test_mapping_group():
-    """Test the ability to associate a single key to multiple values."""
+def test_mapping_superkey():
+    """Test the ability to assign a single key to multiple values."""
     base = {'a': 1, 'b': 2, 'c': 3}
     mapping = aliasedkeys.MutableMapping(base)
     assert sorted(mapping) == ['a', 'b', 'c']
-    mapping.group('G', 'a', 'b')
+    mapping.superkey('G', 'a', 'b')
     assert sorted(mapping) == ['a', 'b', 'c']
     for key, value in mapping.items():
         assert base[key] == value
     assert mapping['a'] == 1
     assert tuple(mapping['G']) == (1, 2)
-    assert mapping.group('G') == ('a', 'b')
+    assert mapping.superkey('G') == ('a', 'b')
     with pytest.raises(KeyError):
-        mapping.group('H')
+        mapping.superkey('H')
 
 
 def test_immutable_from_mutable():
@@ -371,7 +371,7 @@ def test_mutable_mapping_freeze():
         immutable['this'] = -10
     with pytest.raises(TypeError):
         del immutable['this']
-    mutable.group('G', 'this', 'that')
+    mutable.superkey('G', 'this', 'that')
     grouped = mutable.freeze(groups=True)
     for key, value in mutable.items():
         assert grouped[key] == value
