@@ -232,10 +232,8 @@ class Sets(collections.abc.MutableSet, typing.Generic[_KT]):
 
     def __repr__(self) -> str:
         """An unambiguous representation of this object."""
-        module = f"{self.__module__.replace('eprempy.', '')}."
-        name = self.__class__.__qualname__
         items = ', '.join(str(group) for group in self._groups)
-        return f"{module}{name}({items})"
+        return f"{self.__class__.__qualname__}({items})"
 
 
 def keysfrom(
