@@ -87,10 +87,7 @@ class Group(collections.abc.Set, typing.Generic[_KT]):
 
     def __repr__(self) -> str:
         """An unambiguous representation of this instance."""
-        items = self._display_items(separator=', ')
-        module = f"{self.__module__.replace('eprempy.', '')}."
-        name = self.__class__.__qualname__
-        return f"{module}{name}({items})"
+        return f"{self.__class__.__qualname__}({self})"
 
     def _display_items(self, separator: str=', '):
         """Build a collection of strings for printing."""
