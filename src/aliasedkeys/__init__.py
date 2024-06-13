@@ -783,7 +783,7 @@ class Mapping(collections.abc.Mapping, typing.Generic[_KT, _VT]):
     def __eq__(self, other: typing.Mapping) -> bool:
         """Define equality between this and another object."""
         if not isinstance(other, typing.Mapping):
-            return NotImplemented
+            return False
         if isinstance(other, Mapping):
             return self.items() == other.items()
         return dict(self.items()) == dict(other.items())
