@@ -11,6 +11,10 @@ _AT = typing.TypeVar('_AT')
 _VT = typing.TypeVar('_VT')
 
 
+class ValuesTypeError(Exception):
+    """A `TypeError` occurred when working with mapping values."""
+
+
 class Group(collections.abc.Set, typing.Generic[_KT]):
     """A group of associated aliases."""
 
