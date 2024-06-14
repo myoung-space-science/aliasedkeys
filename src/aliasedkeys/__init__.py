@@ -99,8 +99,8 @@ class Set(collections.abc.Set, typing.Generic[_KT]):
         return separator.join(items)
 
 
-class Sets(collections.abc.MutableSet, typing.Generic[_KT]):
-    """A collection of unique key sets of associated members."""
+class SetMap(collections.abc.MutableSet, typing.Generic[_KT]):
+    """A searchable collection of aliased key sets."""
 
     def __init__(
         self,
@@ -156,7 +156,7 @@ class Sets(collections.abc.MutableSet, typing.Generic[_KT]):
         """Combine this instance's key sets with other key sets."""
         these = self._sets.copy()
         for this in others:
-            sets = this if isinstance(this, Sets) else [this]
+            sets = this if isinstance(this, SetMap) else [this]
             for s in sets:
                 if found := self._search(s):
                     these.remove(found)
@@ -238,7 +238,7 @@ class Sets(collections.abc.MutableSet, typing.Generic[_KT]):
 
 def keysfrom(
     mapping: typing.Mapping[_KT, typing.Mapping[_KT, _VT]],
-    aliases: typing.Optional[typing.Union[_KT, Sets[_KT]]]=None,
+    aliases: typing.Optional[typing.Union[_KT, SetMap[_KT]]]=None,
 ) -> typing.List[Set[_KT]]:
     """Extract keys for use in an aliased mapping.
     
@@ -254,7 +254,7 @@ def keysfrom(
         return mapping.keys(aliased=True)
     if aliases is None:
         return [Set(k) for k in mapping.keys()]
-    if isinstance(aliases, Sets):
+    if isinstance(aliases, SetMap):
         return [
             Set(k) | aliases.get(k, ())
             for k in mapping.keys()
@@ -267,7 +267,7 @@ def keysfrom(
 
 def _build_mapping(
     mapping: typing.Mapping=None,
-    aliases: typing.Union[str, Sets[str]]=None,
+    aliases: typing.Union[str, SetMap[str]]=None,
 ) -> dict:
     """Build the internal `dict` for an `~aliased.Mapping`."""
     # Is it empty?
@@ -305,7 +305,7 @@ def _build_from_aliases(
 
 def _build_from_key(
     mapping: typing.Mapping[str, typing.Mapping[str, typing.Any]],
-    aliases: typing.Union[str, Sets[str]]=None,
+    aliases: typing.Union[str, SetMap[str]]=None,
 ) -> typing.Dict[Set, _VT]:
     """Build a `dict` with aliased keys taken from interior mappings.
     
@@ -473,7 +473,7 @@ class Mapping(collections.abc.Mapping, typing.Generic[_KT, _VT]):
     def __init__(
         self,
         mapping: typing.Mapping[_KT, _VT],
-        aliases: typing.Optional[Sets[_KT]]=None,
+        aliases: typing.Optional[SetMap[_KT]]=None,
     ) -> None: ...
 
     @typing.overload
@@ -512,7 +512,7 @@ class Mapping(collections.abc.Mapping, typing.Generic[_KT, _VT]):
         if isinstance(aliases, Mapping):
             return _build_mapping(
                 mapping=mapping,
-                aliases=Sets(*aliases.keys(aliased=True)),
+                aliases=SetMap(*aliases.keys(aliased=True)),
             )
         if isinstance(aliases, typing.Mapping):
             groups = [
@@ -521,7 +521,7 @@ class Mapping(collections.abc.Mapping, typing.Generic[_KT, _VT]):
             ]
             return _build_mapping(
                 mapping=mapping,
-                aliases=Sets(*groups),
+                aliases=SetMap(*groups),
             )
         return _build_mapping(mapping=mapping, aliases=aliases)
 
@@ -647,7 +647,7 @@ class Mapping(collections.abc.Mapping, typing.Generic[_KT, _VT]):
             user-provided mapping and each value set to the given value.
         """
         if (
-            isinstance(__iterable, Sets)
+            isinstance(__iterable, SetMap)
             or not isinstance(__iterable, typing.Mapping)
         ): return cls({k: value for k in __iterable})
         keys = keysfrom(__iterable, aliases=key)
