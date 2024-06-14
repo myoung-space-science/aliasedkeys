@@ -100,7 +100,7 @@ class Set(collections.abc.Set, typing.Generic[_KT]):
 
 
 class Sets(collections.abc.MutableSet, typing.Generic[_KT]):
-    """A collection of unique groups of associated members."""
+    """A collection of unique key sets of associated members."""
 
     def __init__(
         self,
@@ -110,9 +110,9 @@ class Sets(collections.abc.MutableSet, typing.Generic[_KT]):
         Parameters
         ----------
         keys
-            Zero or more groups of associated objects.
+            Zero or more key sets of associated objects.
         """
-        self._groups = [Set(key) for key in keys]
+        self._sets = [Set(key) for key in keys]
 
     @classmethod
     def _from_iterable(cls, it):
@@ -122,15 +122,15 @@ class Sets(collections.abc.MutableSet, typing.Generic[_KT]):
     @property
     def flat(self):
         """All current aliases, in a single list."""
-        return [key for group in self._groups for key in group]
+        return [key for s in self._sets for key in s]
 
     def __len__(self) -> int:
         """Called for len(self)."""
-        return len(self._groups)
+        return len(self._sets)
 
     def __iter__(self):
         """Called for iter(self)."""
-        return iter(self._groups)
+        return iter(self._sets)
 
     def __contains__(self, __x: _KT) -> bool:
         """Called for __x in self."""
@@ -140,99 +140,99 @@ class Sets(collections.abc.MutableSet, typing.Generic[_KT]):
         self: typing.Self,
         *others: typing.Union[_KT, typing.Iterable[_KT], typing.Self],
     ) -> None:
-        """Merge groups from `others` into these groups."""
+        """Merge key sets from `others` into these key sets."""
         if not others:
             return
-        self._groups = self._merge(*others)
+        self._sets = self._merge(*others)
 
     def merge(
         self: typing.Self,
         *others: typing.Union[_KT, typing.Iterable[_KT], typing.Self],
     ) -> typing.Self:
-        """Create a new instance with merged groups."""
+        """Create a new instance with merged key sets."""
         return type(self)(*self._merge(*others))
 
     def _merge(self, *others):
-        """Combine this instance's groups with other groups."""
-        these = self._groups.copy()
+        """Combine this instance's key sets with other key sets."""
+        these = self._sets.copy()
         for this in others:
-            groups = this if isinstance(this, Sets) else [this]
-            for group in groups:
-                if found := self._search(group):
+            sets = this if isinstance(this, Sets) else [this]
+            for s in sets:
+                if found := self._search(s):
                     these.remove(found)
-                    these.append(found | group)
+                    these.append(found | s)
                 else:
-                    these.append(Set(group))
+                    these.append(Set(s))
         return these
 
-    def _search(self, group: typing.Iterable[_KT]):
-        """Search for a member of `group` that is in this instance."""
-        for member in group:
+    def _search(self, s: typing.Iterable[_KT]):
+        """Search for a member of `s` that is in this instance."""
+        for member in s:
             if found := self.get(member):
                 return found
 
     def add(self, __x: typing.Iterable[_KT]) -> None:
-        """Add `__x` to the existing groups."""
+        """Add `__x` to the existing key sets."""
         for i in __x:
             if i in self.flat:
                 raise ValueError(
-                    f"Cannot add {__x}: {i} already exists in a group"
+                    f"Cannot add {__x}: {i} already exists in a key set"
                 ) from None
-        self._groups.append(Set(__x))
+        self._sets.append(Set(__x))
 
     def discard(self, __x: _KT) -> None:
-        """Remove the group containing `__x`."""
+        """Remove the key set containing `__x`."""
         if found := self.get(__x):
-            self._groups.remove(found)
+            self._sets.remove(found)
 
     def __getitem__(self, __x: _KT):
-        """Get the group containing `__x`."""
+        """Get the key set containing `__x`."""
         s = str(__x)
         m = Set(__x)
-        alias = (k for k in self._groups if s in k or m == k)
+        alias = (k for k in self._sets if s in k or m == k)
         try:
             found = next(alias)
         except StopIteration as err:
             raise KeyError(
-                f"No group containing {__x!r}"
+                f"No key set containing {__x!r}"
             ) from err
         return found
 
     DefaultType = typing.TypeVar('DefaultType')
 
     def get(self, __x: _KT, default: typing.Optional[DefaultType]=None):
-        """Get the group containing `__x`, if possible.
+        """Get the key set containing `__x`, if possible.
         
         This method will sequentially check for a one of the following cases:
             - one of the internal mapping keys contains the given key
             - the given key is equal to one of the internal mapping keys
 
-        If it finds a match, it will immediately return that group (i.e.,
+        If it finds a match, it will immediately return that key set (i.e.,
         without checking other keys). If not, it will return `default`.
         """
         s = str(__x)
         m = Set(__x)
-        alias = (k for k in self._groups if s in k or m == k)
+        alias = (k for k in self._sets if s in k or m == k)
         return next(alias, default)
 
     def without(self, *keys: typing.Union[_KT, Set[_KT]]):
-        """Create a new keymap after removing `keys`."""
+        """Create a new instance after removing `keys`."""
         subset = [
-            group
-            for group in self._groups
+            s
+            for s in self._sets
             if (
-                # none of the keys is in this group
-                all(key not in group for key in keys)
+                # none of the keys is in this key set
+                all(key not in s for key in keys)
                 and
-                # this group is not one of the keys
-                group not in keys
+                # this key set is not one of the keys
+                s not in keys
             )
         ]
         return type(self)(*subset)
 
     def __repr__(self) -> str:
         """An unambiguous representation of this object."""
-        items = ', '.join(str(group) for group in self._groups)
+        items = ', '.join(str(s) for s in self._sets)
         return f"{self.__class__.__qualname__}({items})"
 
 
