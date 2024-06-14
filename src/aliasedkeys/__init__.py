@@ -245,20 +245,10 @@ def keysfrom(
     Parameters
     ----------
     mapping
-        Same as for `~aliased.Mapping.__init__`.
+        Same as for `~Mapping.__init__`.
 
     aliases
-        Same as for `~aliased.Mapping.__init__`.
-
-    Examples
-    --------
-    >>> mapping = {
-    ...     'a': {'aliases': ('A', 'a0'), 'n': 1, 'm': 'foo'},
-    ...     'b': {'aliases': 'B', 'n': -4},
-    ... }
-    >>> keys = keysfrom(mapping)
-    >>> keys
-    [MappingKey('a | A | a0'), MappingKey('B | b')]
+        Similar to `Mapping.__init__`, except the default value is `None`.
     """
     if isinstance(mapping, Mapping):
         return mapping.keys(aliased=True)
@@ -449,99 +439,21 @@ _MT = typing.TypeVar('_MT', bound='Mapping')
 
 class Mapping(collections.abc.Mapping, typing.Generic[_KT, _VT]):
     """A mapping class that supports aliased keys.
-    
-    Examples
-    --------
-    Create an instance from a standard `dict` with strings or tuples of strings
-    as keys.
 
-    >>> mapping = {'a': 1, ('b', 'B'): 2, ('c', 'C', 'c0'): -9}
-    >>> amap = aliased.Mapping(mapping)
-    >>> amap
-    Mapping('a': 1, 'b | B': 2, 'c | C | c0': -9)
+    Parameters
+    ----------
+    mapping : mapping, default=None
+        An object that maps strings or iterables of strings to values of any
+        type. If the keys are iterables of strings, grouped keys will represent
+        aliases for each other. Omitting this argument will produce an empty
+        mapping.
 
-    The caller may access an individual item by any one (but only one) of its
-    valid aliases.
-
-    >>> amap['a']
-    1
-    >>> amap['b']
-    2
-    >>> amap['B']
-    2
-    >>> amap[('b', 'B')]
-    ...
-    KeyError: ('b', 'B')
-
-    Aliased items are identical.
-
-    >>> amap['b'] is amap['B']
-    True
-
-    The representation of keys, values, and items reflect the internal grouping
-    by alias, but iterating over each produces de-aliased members. This behavior
-    naturally supports loops and comprehensions, since access is only valid for
-    individual items.
-
-    >>> amap.keys()
-    AliasedKeys(['a', 'b | B', 'c | C | c0'])
-    >>> amap.values()
-    AliasedValues([1, 2, -9])
-    >>> amap.items()
-    AliasedItems([('a', 1), ('b | B', 2), ('c | C | c0', -9)])
-    >>> list(amap.keys())
-    ['a', 'b', 'B', 'c', 'C', 'c0']
-    >>> list(amap.values())
-    [1, 2, 2, -9, -9, -9]
-    >>> list(amap.items())
-    [('a', 1), ('b', 2), ('B', 2), ('c', -9), ('C', -9), ('c0', -9)]
-    >>> for k, v in amap.items():
-    ...     print(k, amap[k], v)
-    ... 
-    a 1 1
-    b 2 2
-    B 2 2
-    c -9 -9
-    C -9 -9
-    c0 -9 -9
-
-    It is always possible to access the equivalent de-aliased `dict`.
-
-    >>> amap.flat
-    {'a': 1, 'b': 2, 'B': 2, 'c': -9, 'C': -9, 'c0': -9}
-
-    Updates and deletions apply to all associated aliases.
-
-    >>> amap['c'] = 5.6
-    >>> list(amap.items())
-    [('a', 1), ('b', 2), ('B', 2), ('c', 5.6), ('C', 5.6), ('c0', 5.6)]
-    >>> del amap['c']
-    >>> list(amap.items())
-    [('a', 1), ('b', 2), ('B', 2)]
-
-    Users may access all aliases for a given key via the `alias` method.
-    Attempting to register an alias will raise a `KeyError` if it is already an
-    alias for a different key.
-
-    >>> amap.alias('b')
-    MappingKey('B')
-    >>> amap.alias('b', include=True)
-    MappingKey('b | B')
-    >>> amap.alias(b='my B')
-    >>> amap.alias('b')
-    MappingKey('B | my B')
-    >>> amap
-    Mapping('a': 1, 'b | my B | B': 2)
-    >>> amap.alias(a='b')
-    ...
-    KeyError: "'b' is already an alias for '(B, my B)'"
-
-    Notes
-    -----
-    The length of this object, as well as its keys, values, and items, is equal
-    to the number of valid aliases it contains. This is consistent with the
-    many-to-one nature of the mapping despite the fact that it internally stores
-    aliases and values in a one-to-one mapping.
+    aliases : string or `~Mapping` or `~Sets`, default='aliases'
+        Either a string that points to values in `mapping` to use as aliases, an
+        instance of `~aliased.Groups` that maps keys in `mapping` to the values
+        to use as their aliases, or an instance of this class. The first case
+        assumes that the values of `mapping` are themselves mappings. These
+        values will not appear in the aliased mapping values.
     """
 
     @typing.overload
@@ -733,28 +645,6 @@ class Mapping(collections.abc.Mapping, typing.Generic[_KT, _VT]):
         aliased mapping
             A new instance of this class, with aliased keys taken from the
             user-provided mapping and each value set to the given value.
-
-        Examples
-        --------
-        Create an aliased mapping with keys taken from a pre-defined dictionary
-        and all values set to -1.0
-
-        >>> mapping = {
-        ...     'a': {'aliases': ('A', 'a0'), 'n': 1, 'm': 'foo'},
-        ...     'b': {'aliases': 'B', 'n': -4},
-        ...     'c': {'n': 42},
-        ... }
-        >>> amap = aliased.Mapping.fromkeys(mapping, value=-1.0)
-        >>> amap
-        aliased.Mapping('a0 | a | A': -1.0, 'B | b': -1.0, 'c': -1.0)
-        >>> keys = [('a', 'A', 'a0'), ('B', 'b'), 'c']
-        >>> amap = aliased.Mapping.fromkeys(keys, value=-1.0)
-        >>> amap
-        aliased.Mapping('a0 | a | A': -1.0, 'B | b': -1.0, 'c': -1.0)
-        >>> keys = aliased.Groups(*keys)
-        >>> amap = aliased.Mapping.fromkeys(keys, value=-1.0)
-        >>> amap
-        aliased.Mapping('a0 | a | A': -1.0, 'B | b': -1.0, 'c': -1.0)
         """
         if (
             isinstance(__iterable, Sets)
@@ -830,45 +720,7 @@ class MutableMapping(Mapping, collections.abc.MutableMapping):
     
     Parameters
     ----------
-    mapping : mapping
-        An object that maps strings or iterables of strings to values of any
-        type.
-
-    Examples
-    --------
-    These examples build on the examples shown in `Mapping`.
-
-    >>> mutable = iterables.MutableMapping(aliased)
-
-    Updates and deletions apply to all associated aliases.
-
-    >>> mutable['c'] = 5.6
-    >>> list(mutable.items())
-    [('a', 1), ('b', 2), ('B', 2), ('c', 5.6), ('C', 5.6), ('c0', 5.6)]
-    >>> del mutable['c']
-    >>> list(mutable.items())
-    [('a', 1), ('b', 2), ('B', 2)]
-
-    Users may access all aliases for a given key, or register new ones, via the
-    `alias` method. Attempting to register an alias will raise a `KeyError` if
-    it is already an alias for a different key.
-
-    >>> mutable.alias('b')
-    MappingKey('B')
-    >>> mutable.alias('b', include=True)
-    MappingKey('b | B')
-    >>> mutable.alias(b='my B')
-    >>> mutable.alias('b')
-    MappingKey('B | my B')
-    >>> mutable
-    Mapping('a': 1, 'b | my B | B': 2)
-    >>> mutable.alias(a='b')
-    ...
-    KeyError: "'b' is already an alias for '(B, my B)'"
-
-    Notes
-    -----
-    See note on lengths at `~Mapping`.
+    See `Mapping`.
     """
     def __init__(self, mapping=None, aliases=None) -> None:
         super().__init__(mapping, aliases)
@@ -984,12 +836,7 @@ class MutableMapping(Mapping, collections.abc.MutableMapping):
 
 
 class NameMap(collections.abc.Mapping):
-    """A mapping from aliases to canonical names.
-    
-    Notes
-    -----
-    See note on lengths at `~Mapping`.
-    """
+    """A mapping from aliases to canonical names."""
 
     AliasDefinitions = typing.Union[
         typing.Iterable[typing.Iterable[str]],
