@@ -7,50 +7,50 @@ import pytest
 import aliasedkeys
 
 
-def test_group():
-    """Test the object that represents a group of aliases."""
-    assert len(aliasedkeys.Group('t0')) == 1
-    assert len(aliasedkeys.Group(('t0', 't1', 't2'))) == 3
-    assert len(aliasedkeys.Group(['t0', 't1', 't2'])) == 3
-    assert len(aliasedkeys.Group({'t0', 't1', 't2'})) == 3
-    assert len(aliasedkeys.Group('t0', 't1', 't2')) == 3
-    key = aliasedkeys.Group('t0', 't1', 't2')
-    assert key | 't3' == aliasedkeys.Group('t0', 't1', 't2', 't3')
-    assert key - 't2' == aliasedkeys.Group('t0', 't1')
-    assert aliasedkeys.Group('a', 'b') == aliasedkeys.Group('b', 'a')
-    assert aliasedkeys.Group('')
+def test_set():
+    """Test the object that represents a set-like group of aliases."""
+    assert len(aliasedkeys.Set('t0')) == 1
+    assert len(aliasedkeys.Set(('t0', 't1', 't2'))) == 3
+    assert len(aliasedkeys.Set(['t0', 't1', 't2'])) == 3
+    assert len(aliasedkeys.Set({'t0', 't1', 't2'})) == 3
+    assert len(aliasedkeys.Set('t0', 't1', 't2')) == 3
+    key = aliasedkeys.Set('t0', 't1', 't2')
+    assert key | 't3' == aliasedkeys.Set('t0', 't1', 't2', 't3')
+    assert key - 't2' == aliasedkeys.Set('t0', 't1')
+    assert aliasedkeys.Set('a', 'b') == aliasedkeys.Set('b', 'a')
+    assert aliasedkeys.Set('')
     with pytest.raises(TypeError):
-        aliasedkeys.Group()
+        aliasedkeys.Set()
     assert key == ('t0', 't1', 't2')
     assert key == ['t0', 't1', 't2']
-    assert aliasedkeys.Group('2') == '2'
-    assert aliasedkeys.Group(2) == 2
+    assert aliasedkeys.Set('2') == '2'
+    assert aliasedkeys.Set(2) == 2
 
 
-def test_groups():
+def test_setmap():
     """Test the collection that groups aliases."""
     init = [('a', 'A'), 'b', ['c', 'C'], ['d0', 'd1', 'd2']]
-    groups = aliasedkeys.Groups(*init)
+    setmap = aliasedkeys.SetMap(*init)
     test = {
-        'a': aliasedkeys.Group('a', 'A'),
-        'A': aliasedkeys.Group('a', 'A'),
-        'b': aliasedkeys.Group('b'),
-        'c': aliasedkeys.Group('c', 'C'),
-        'C': aliasedkeys.Group('c', 'C'),
-        'd0': aliasedkeys.Group('d0', 'd1', 'd2'),
-        'd1': aliasedkeys.Group('d0', 'd1', 'd2'),
-        'd2': aliasedkeys.Group('d0', 'd1', 'd2'),
+        'a': aliasedkeys.Set('a', 'A'),
+        'A': aliasedkeys.Set('a', 'A'),
+        'b': aliasedkeys.Set('b'),
+        'c': aliasedkeys.Set('c', 'C'),
+        'C': aliasedkeys.Set('c', 'C'),
+        'd0': aliasedkeys.Set('d0', 'd1', 'd2'),
+        'd1': aliasedkeys.Set('d0', 'd1', 'd2'),
+        'd2': aliasedkeys.Set('d0', 'd1', 'd2'),
     }
-    for key, group in test.items():
-        assert groups.get(key) == group
-        assert groups[key] == group
-    assert groups.get('B') is None
+    for key, value in test.items():
+        assert setmap.get(key) == value
+        assert setmap[key] == value
+    assert setmap.get('B') is None
     with pytest.raises(KeyError):
-        groups['B']
+        setmap['B']
 
 
-def test_groups_set_operations():
-    """Test set operations on aliased groups."""
+def test_setmap_set_operations():
+    """Test set operations on aliased key sets."""
     # Create the test sets.
     a, b, c, d = {('a', 'A')}, {'b'}, {('c', 'C')}, {('d0', 'd1', 'd2')}
     # Define some set unions for convenience.
@@ -71,16 +71,16 @@ def test_groups_set_operations():
     }
     for f, (x, y, r) in cases.items():
         # Create the equivalent instances.
-        gx = aliasedkeys.Groups(*x)
-        gy = aliasedkeys.Groups(*y)
+        sx = aliasedkeys.SetMap(*x)
+        sy = aliasedkeys.SetMap(*y)
         # Make sure we have the correct set-wise result.
         assert f(x, y) == r
-        # Test the groups-wise operation.
-        assert f(gx, gy) == aliasedkeys.Groups(*r)
+        # Test the setmap-wise operation.
+        assert f(sx, sy) == aliasedkeys.SetMap(*r)
 
 
-def test_groups_update():
-    """Test the ability to update a collection of groups (in-place merge)."""
+def test_setmap_update():
+    """Test the ability to update a collection of sets (in-place merge)."""
     original = [('a', 'A'), 'b', ['c', 'C'], ['d0', 'd1', 'd2']]
     modified = {
         ('a', 'A'): ['a', 'A', 'a1'],
@@ -92,30 +92,30 @@ def test_groups_update():
         ('this', 'that'),
     }
     targets = [('a', 'a1'), ['this', 'that']]
-    update_groups(original, modified, inserted, *targets)
-    update_groups(original, modified, inserted, aliasedkeys.Groups(*targets))
+    update_setmap(original, modified, inserted, *targets)
+    update_setmap(original, modified, inserted, aliasedkeys.SetMap(*targets))
 
 
-def update_groups(
+def update_setmap(
     original,
     modified: typing.Dict[tuple, typing.Optional[list]],
     inserted: typing.Set[tuple],
     *others,
 ) -> None:
-    """Helper for testing `aliasedkeys.Groups.update`."""
-    groups = aliasedkeys.Groups(*original)
-    groups.update(*others)
+    """Helper for testing `aliasedkeys.Sets.update`."""
+    setmap = aliasedkeys.SetMap(*original)
+    setmap.update(*others)
     for old, new in modified.items():
         keys = new or old
         for key in keys:
-            assert groups.get(key) == aliasedkeys.Group(*keys)
+            assert setmap.get(key) == aliasedkeys.Set(*keys)
     for keys in inserted:
         for key in keys:
-            assert groups.get(key) == aliasedkeys.Group(*keys)
+            assert setmap.get(key) == aliasedkeys.Set(*keys)
 
 
-def test_groups_merge():
-    """Test the ability to create a merged collection of groups."""
+def test_setmap_merge():
+    """Test the ability to create a merged collection of key sets."""
     original = [('a', 'A'), 'b', ['c', 'C'], ['d0', 'd1', 'd2']]
     modified = {
         ('a', 'A'): ['a', 'A', 'a1'],
@@ -127,43 +127,43 @@ def test_groups_merge():
         ('this', 'that'),
     }
     targets = [('a', 'a1'), ['this', 'that']]
-    merge_groups(original, modified, inserted, *targets)
-    merge_groups(original, modified, inserted, aliasedkeys.Groups(*targets))
+    merge_setmap(original, modified, inserted, *targets)
+    merge_setmap(original, modified, inserted, aliasedkeys.SetMap(*targets))
 
 
-def merge_groups(
+def merge_setmap(
     original,
     modified: typing.Dict[tuple, typing.Optional[list]],
     inserted: typing.Set[tuple],
     *others,
 ) -> None:
-    """Helper for testing `aliasedkeys.Groups.merge`."""
-    groups = aliasedkeys.Groups(*original)
-    merged = groups.merge(*others)
+    """Helper for testing `aliasedkeys.Sets.merge`."""
+    setmap = aliasedkeys.SetMap(*original)
+    merged = setmap.merge(*others)
     for old, new in modified.items():
         keys = new or old
         for key in keys:
-            assert merged.get(key) == aliasedkeys.Group(*keys)
+            assert merged.get(key) == aliasedkeys.Set(*keys)
         for key in old:
-            assert groups.get(key) == aliasedkeys.Group(*old)
+            assert setmap.get(key) == aliasedkeys.Set(*old)
     for keys in inserted:
-        assert all(key not in groups for key in keys)
+        assert all(key not in setmap for key in keys)
 
 
-def test_groups_without():
-    """Test the ability to exclude groups from a collection."""
+def test_setmap_without():
+    """Test the ability to exclude key sets from a collection."""
     init = [('a', 'A'), 'b', ['c', 'C'], ['d0', 'd1', 'd2']]
-    groups = aliasedkeys.Groups(*init)
+    setmap = aliasedkeys.SetMap(*init)
     splits = {
         'a': ['b', ('c', 'C'), ('d0', 'd1', 'd2')],
         ('a', 'd1'): ['b', ('c', 'C')],
         ('d1', 'a'): ['b', ('c', 'C')],
-        (aliasedkeys.Group('c', 'C'), 'd0'): [('a', 'A'), 'b'],
-        (aliasedkeys.Group('C'), 'd0'): [('a', 'A'), 'b', ('c', 'C')],
+        (aliasedkeys.Set('c', 'C'), 'd0'): [('a', 'A'), 'b'],
+        (aliasedkeys.Set('C'), 'd0'): [('a', 'A'), 'b', ('c', 'C')],
         ('T', 'd0'): [('a', 'A'), 'b', ('c', 'C')],
     }
     for r, k in splits.items():
-        assert groups.without(*r) == aliasedkeys.Groups(*k)
+        assert setmap.without(*r) == aliasedkeys.SetMap(*k)
 
 
 def test_mapping():
@@ -205,7 +205,7 @@ def test_mapping():
 
     # Containment checks should support strings and aliased keys.
     assert 'the other' in mixed and ('the other',) not in mixed
-    assert aliasedkeys.Group('that', 'second') in mixed
+    assert aliasedkeys.Set('that', 'second') in mixed
 
     # Check lengths of keys, values, and items.
     for mapping, n_keys in zip([standard, basic, mixed], [3, 6, 4]):
@@ -265,8 +265,8 @@ def test_repeated_key():
     for key, value in flat.items():
         assert amap[key] == value
     aliased_keys = [
-        aliasedkeys.Group('a', 'A'),
-        aliasedkeys.Group('b', 'B'),
+        aliasedkeys.Set('a', 'A'),
+        aliasedkeys.Set('b', 'B'),
     ]
     assert sorted(amap.keys(aliased=True)) == aliased_keys
 
@@ -319,20 +319,20 @@ def test_mutable_mapping():
         mixed.alias('this', 'that')
 
 
-def test_mapping_superkey():
+def test_mapping_label():
     """Test the ability to assign a single key to multiple values."""
     base = {'a': 1, 'b': 2, 'c': 3}
     mapping = aliasedkeys.MutableMapping(base)
     assert sorted(mapping) == ['a', 'b', 'c']
-    mapping.superkey('G', 'a', 'b')
+    mapping.label('G', 'a', 'b')
     assert sorted(mapping) == ['a', 'b', 'c']
     for key, value in mapping.items():
         assert base[key] == value
     assert mapping['a'] == 1
     assert tuple(mapping['G']) == (1, 2)
-    assert mapping.superkey('G') == ('a', 'b')
+    assert mapping.label('G') == ('a', 'b')
     with pytest.raises(KeyError):
-        mapping.superkey('H')
+        mapping.label('H')
 
 
 def test_immutable_from_mutable():
@@ -371,7 +371,7 @@ def test_mutable_mapping_freeze():
         immutable['this'] = -10
     with pytest.raises(TypeError):
         del immutable['this']
-    mutable.superkey('G', 'this', 'that')
+    mutable.label('G', 'this', 'that')
     grouped = mutable.freeze(groups=True)
     for key, value in mutable.items():
         assert grouped[key] == value
@@ -483,7 +483,7 @@ def test_mapping_fromkeys():
         'D': None,
     }
     assert mapping.flat == expected
-    keys = aliasedkeys.Groups(('a', 'A', 'a0'), ('b', 'B'), ('c', 'C'), 'D')
+    keys = aliasedkeys.SetMap(('a', 'A', 'a0'), ('b', 'B'), ('c', 'C'), 'D')
     mapping = aliasedkeys.Mapping.fromkeys(keys)
     assert mapping.flat == expected
     keys = [('a', 'A', 'a0'), ('b', 'B'), ('c', 'C'), 'D']
@@ -503,15 +503,15 @@ def test_mapping_fromkeys():
     assert mapping.flat == expected
 
 
-def test_mapping_from_groups():
-    """Initialize an aliased mapping with aliased groups."""
+def test_mapping_from_setmap():
+    """Initialize an aliased mapping with aliased key sets."""
     init = {
         'a': {'name': 'Annabez', 'k': ['Ka']},
         'b': {'name': 'Borb', 'k': ('Kb', 'KB')},
         'C': {'name': 'Chrunk'},
         'D': {'name': 'Dilk'},
     }
-    keymap = aliasedkeys.Groups(('a', 'A', 'a0'), ('b', 'B'), ('c', 'C'), 'D')
+    keymap = aliasedkeys.SetMap(('a', 'A', 'a0'), ('b', 'B'), ('c', 'C'), 'D')
     mapping = aliasedkeys.Mapping(init, aliases=keymap)
     expected = {
         'a': {'name': 'Annabez', 'k': ['Ka']},
@@ -595,10 +595,10 @@ def test_module_keysfrom():
         ['C', 'c'],
     ]
     keys = aliasedkeys.keysfrom(this)
-    expected = [aliasedkeys.Group(k) for k in this.keys()]
+    expected = [aliasedkeys.Set(k) for k in this.keys()]
     assert keys == expected
     keys = aliasedkeys.keysfrom(this, aliases='aliases')
-    expected = [aliasedkeys.Group(k) for k in groups]
+    expected = [aliasedkeys.Set(k) for k in groups]
     assert keys == expected
 
 
@@ -626,11 +626,11 @@ def test_keysview():
     expected = [k for key in d1 for k in key]
     assert sorted(a1.keys()) == sorted(expected)
     for key in d1:
-        assert aliasedkeys.Group(key) in a1.keys(aliased=True)
+        assert aliasedkeys.Set(key) in a1.keys(aliased=True)
     key = ('a', 'b', 'c')
     a3 = aliasedkeys.Mapping({key: 1})
     for permutation in itertools.permutations(key, len(key)):
-        aliased_key = aliasedkeys.Group(permutation)
+        aliased_key = aliasedkeys.Set(permutation)
         assert aliased_key in a3
         assert aliased_key in a3.keys(aliased=True)
 
@@ -649,7 +649,7 @@ def test_itemsview():
     assert a1.items() == a2.items()
     assert a1.items(aliased=True) == a1.items(aliased=True)
     for key, value in d1.items():
-        aliases = aliasedkeys.Group(key)
+        aliases = aliasedkeys.Set(key)
         assert (aliases, value) in a1.items(aliased=True)
         assert aliases in a1.keys(aliased=True)
         assert value in a1.values(aliased=True)
