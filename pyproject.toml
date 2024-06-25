@@ -8,7 +8,7 @@ packages = [{include = "aliasedkeys", from = "src"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"
-nonstring = "^0.1.0"
+nonstring = ">=0.1.0"
 
 
 [build-system]
