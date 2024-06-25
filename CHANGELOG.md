@@ -2,6 +2,8 @@
 
 ## NEXT
 
+- Update version constraint for `nonstring` dependency
+
 ## v0.1.0 (2024-06-14)
 
 Hello world! The code in this package was originally developed as part of a
